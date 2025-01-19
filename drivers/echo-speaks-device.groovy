@@ -1,7 +1,8 @@
+/* groovylint-disable CompileStatic, MethodCount, MethodSize, UnnecessaryGetter */
 /**
  *	Echo Speaks Device (Hubitat ONLY)
  *
- *  Copyright 2018, 2019, 2020, 2021 Anthony Santilli
+ *  Copyright 2018, 2019, 2020, 2021, 2022, 2023, 2024 Anthony Santilli
  *  Code Contributions by @nh.schottfam
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -15,6 +16,7 @@
  */
 //file:noinspection GroovySillyAssignment
 //file:noinspection GroovyUnusedAssignment
+//file:noinspection GroovyPointlessBoolean
 
 
 import groovy.json.JsonOutput
@@ -24,8 +26,8 @@ import java.text.SimpleDateFormat
 //************************************************
 //*               STATIC VARIABLES               *
 //************************************************
-@Field static final String devVersionFLD  = "4.1.9.9"
-@Field static final String devModifiedFLD = "2021-09-10"
+@Field static final String devVersionFLD  = '4.2.4.0'
+@Field static final String devModifiedFLD = '2024-03-07'
 @Field static final String sNULL          = (String)null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -123,6 +125,7 @@ metadata {
 
         command "parallelPlayAnnouncement", [[name: "Message to Announce*", type: "STRING", description: "Message to announce"],[name: "Announcement Title", type: "STRING", description: "This displays a title above message on devices with display"]]
         command "playAnnouncement", [[name: "Message to Announce*", type: "STRING", description: "Message to announce"],[name: "Announcement Title", type: "STRING", description: "This displays a title above message on devices with display"], [name: "Set Volume", type: "NUMBER", description: "Sets the volume before playing the message"],[name: "Restore Volume", type: "NUMBER", description: "Restores the volume after playing the message"]]
+        command "playAnnouncementIgnore", [[name: "Message to Announce*", type: "STRING", description: "Message to announce"],[name: "Announcement Title", type: "STRING", description: "This displays a title above message on devices with display"], [name: "Set Volume", type: "NUMBER", description: "Sets the volume before playing the message"],[name: "Restore Volume", type: "NUMBER", description: "Restores the volume after playing the message"]]
         command "playAnnouncementAll", [[name: "Message to Announce*", type: "STRING", description: "Message to announce"],[name: "Announcement Title", type: "STRING", description: "This displays a title above message on devices with display"]]
 
         command "playCalendarToday", [[name: "Set Volume", type: "NUMBER", description: "Sets the volume before playing the message"],[name: "Restore Volume", type: "NUMBER", description: "Restores the volume after playing the message"]]
@@ -163,6 +166,7 @@ metadata {
 //        command "volumeDown"
         command "speechTest"
 //        command "speak", [[name: "Message to Speak*", type: "STRING", description: ""], volume, voice]
+        command "speakIgnoreDnd", [[name: "Message to Speak (Ignores Do Not Disturb)*", type: "STRING", description: ""], [name: "Set Volume", type: "NUMBER", description: "Sets the volume before speak"], [name: "Voice", type: "STRING", description: "Voice to use"]]
         command "sendTestAnnouncement"
         command "sendTestAnnouncementAll"
         if(!isZone()) {
@@ -173,6 +177,7 @@ metadata {
             command "removeBluetooth", [[name: "Bluetooth Device Label*", type: "STRING", description: ""]]
         }
         command "parallelSpeak", [[name: "Message to Speak*", type: "STRING", description: ""]]
+        command "parallelSpeakIgnoreDnd", [[name: "Message to Speak (Ignores Do Not Disturb)*", type: "STRING", description: ""]]
         command "sendAnnouncementToDevices", ["string", "string", "object", "number", "number"]
         command "voiceCmdAsText", [[name: "Voice Command as Text*", type: "STRING", description: ""]]
     }
@@ -185,6 +190,7 @@ metadata {
             input "logDebug", "bool", title: "Show Debug Logs?", description: "Only leave on when required", required: false, defaultValue: false
             input "logTrace", "bool", title: "Show Detailed Logs?", description: "Only Enabled when asked by the developer", required: false, defaultValue: false
             input "ignoreTimeoutErrors", "bool", required: false, title: "Don't show errors in the logs for request timeouts?", description: sBLANK, defaultValue: true
+            input "ignoreHealth", "bool", required: false, title: "Ignore Devices Online/Offline State?", description: sBLANK, defaultValue: true
             input "sendDevNotifAsAnnouncement", "bool", required: false, title: "Send Device Notifications as Announcements?", description: sBLANK, defaultValue: false
             // maxVolume not used
             // input "maxVolume", "number", required: false, title: "Set Max Volume for this device", description: "There will be a delay of 30-60 seconds in getting the current volume level"
@@ -251,8 +257,8 @@ String getEchoSerial() { return (String)state.serialNumber ?: sNULL }
 String getEchoOwner() { return (String)state.deviceOwnerCustomerId ?: sNULL }
 String getEchoAccountId() { return (String)state.deviceAccountId ?: sNULL }
 
-Map getEchoDevInfo(String cmd) {
-    if(isCommandTypeAllowed(cmd)) {
+Map getEchoDevInfo(String cmd, Boolean ignoreDoNotDisturb=false) {
+    if(isCommandTypeAllowed(cmd, false, ignoreDoNotDisturb)) {
 	    return [deviceTypeId: getEchoDeviceType(), deviceSerialNumber: getEchoSerial(), deviceOwnerCustomerId: getEchoOwner(), deviceAccountId: getEchoAccountId(), dni: device.deviceNetworkId ]
     }
    return null
@@ -307,7 +313,7 @@ Boolean isAuthOk(Boolean noLogs=false) {
     } else { return true }
 }
 
-Boolean isCommandTypeAllowed(String type, Boolean noLogs=false) {
+Boolean isCommandTypeAllowed(String type, Boolean noLogs=false, Boolean ignoreDoNotDisturb=false) {
     if(isZone()) return true
 
     if(!type) { if(!noLogs) { logWarn("Invalid Permissions Type Received: ${type}", true) }; return false }
@@ -319,7 +325,7 @@ Boolean isCommandTypeAllowed(String type, Boolean noLogs=false) {
     if(!(String)state.deviceType) { if(!noLogs) { logWarn("DeviceType State Value Missing: ${(String)state.deviceType}", true) }; return false }
     if(!(String)state.deviceOwnerCustomerId) { if(!noLogs) { logWarn("OwnerCustomerId State Value Missing: ${(String)state.deviceOwnerCustomerId}", true) }; return false }
 
-    Boolean isOnline = (device?.currentValue("onlineStatus") == "online")
+    Boolean isOnline = settings.ignoreHealth!=false || device?.currentValue("onlineStatus") == "online"
     if(!isOnline) {
         if(!noLogs) { logWarn("Commands NOT Allowed! Device is currently (OFFLINE) | Type: (${type})", true) }
         triggerDataRrshF("found offline" )
@@ -329,7 +335,8 @@ Boolean isCommandTypeAllowed(String type, Boolean noLogs=false) {
     if(!(Boolean)state.isSupportedDevice) { logWarn("You are using an Unsupported/Unknown Device all restrictions have been removed for testing! If commands function please report device info to developer", true); return true }
     if(state.permissions == null) { if(!noLogs) { logWarn("Permissions State Object Missing: ${state.permissions}", true) }; return false }
 
-    if(device?.currentValue("doNotDisturb") == sTRUE && (!(type in ["volumeControl", "alarms", "reminders", "doNotDisturb", "wakeWord", "bluetoothControl", "mediaPlayer"]))) { if(!noLogs) { logWarn("All Voice Output Blocked... Do Not Disturb is ON", true) }; return false }
+    if(!ignoreDoNotDisturb && !(type in ["volumeControl", "alarms", "reminders", "doNotDisturb", "wakeWord", "bluetoothControl", "mediaPlayer"])
+            && device?.currentValue("doNotDisturb") == sTRUE ) { if(!noLogs) { logWarn("All Voice Output Blocked... Do Not Disturb is ON", true) }; return false }
 
     if(permissionOk(type)) { return true }
     else {
@@ -526,6 +533,7 @@ public void updSocketStatus(Boolean active) {
     state.websocketActive = active
 }
 
+@SuppressWarnings('GroovyFallthrough')
 void websocketUpdEvt(List<String> triggers) {
     logTrace("websocketEvt: $triggers")
     // if((Boolean)state.isWhaDevice) { return }
@@ -608,7 +616,7 @@ void refreshData(Boolean full=false) {
     // logTrace("permissions: ${state.permissions}")
     if((Boolean)state.permissions?.mediaPlayer && (full || mfull || !wsActive)) {
         getPlaybackState()
-        if(!isWHA) { getPlaylists() }
+        // if(!isWHA) { getPlaylists() }
     }
     if(!isWHA) {
         if (full || mfull) {
@@ -1352,6 +1360,7 @@ def togglePlayback() {
     }
 }
 
+@SuppressWarnings('unused')
 def noOp() {
     if(isZone()) {
         parent.relayNopCommand()
@@ -1660,9 +1669,14 @@ void seqHelper_a(String cmd, String val, String cmdType, volume, restoreVolume, 
             didV = true
         }
         seqs.push([command: cmd, cmdType: cmdType, value: val, deviceData: getDeviceData()])
-        if(didV && restoreVolume != null) { seqs.push([command: "volume", value: restoreVolume, deviceData: getDeviceData()]) }
+        if(didV) updateLevel(null, volume)
         sendMultiSequenceCommand(seqs, cmdType, parallel)
-        if(didV) updateLevel(restoreVolume, volume)
+        if(didV && restoreVolume != null) {
+            parent.queueNopCommand()
+            sendSequenceCommand("VolumeCommand", "volume", restoreVolume)
+            //seqs.push([command: "volume", value: restoreVolume, deviceData: getDeviceData()])
+            updateLevel(restoreVolume, volume)
+        }
         //} else { sendSequenceCommand(cmdType, cmd, val) }
     }
 }
@@ -1711,9 +1725,14 @@ void seqHelper_s(String cmd, String cmdType, volume, restoreVolume){
     } else {
         if(volume != null) {
             List seqs = [[command: "volume", value: volume, deviceData: getDeviceData()], [command: cmd, cmdType: cmdType, deviceData: getDeviceData()]]
-            if(restoreVolume != null) { seqs.push([command: "volume", value: restoreVolume, deviceData: getDeviceData()]) }
+            updateLevel(null, volume)
             sendMultiSequenceCommand(seqs, cmdType)
-            updateLevel(restoreVolume, volume)
+            if(restoreVolume != null) {
+                parent.queueNopCommand()
+                sendSequenceCommand("VolumeCommand", "volume", restoreVolume)
+                //seqs.push([command: "volume", value: restoreVolume, deviceData: getDeviceData()])
+                updateLevel(restoreVolume, volume)
+            }
         } else { sendSequenceCommand(cmdType, cmd) }
     }
 }
@@ -1782,17 +1801,22 @@ def finishAnnounce(String msg, volume, restoreVolume){
     updateLevel(restoreVolume, volume)
 }
 
-def playAnnouncement(String msg, volume=null, restoreVolume=null, Boolean parallel=false) {
+@SuppressWarnings('unused')
+def playAnnouncementIgnore(String msg, volume=null, restoreVolume=null, Boolean parallel=false) {
+    playAnnouncement(msg, volume, restoreVolume, parallel, true)
+}
+
+def playAnnouncement(String msg, volume=null, restoreVolume=null, Boolean parallel=false, Boolean ignoreDoNotDisturb=false) {
     if(isZone()) {
         if(parallel) {
-            parent.relayAnnounceZone(parent.id.toString(), msg, true)
+            parent.relayAnnounceZone(parent.id.toString(), msg, true, ignoreDoNotDisturb)
             finishAnnounce(msg, null, null)
         } else {
             parent.zoneCmdHandler([value: 'announcement', jsonData: [zones:[parent.id.toString()], cmd:'playAnnouncement', message: msg, title: sNULL, changeVol:volume, restoreVol:restoreVolume, delay:0]], true)
             finishAnnounce(msg, volume, restoreVolume)
         }
     } else {
-        if(isCommandTypeAllowed("announce")) {
+        if(isCommandTypeAllowed("announce", false, ignoreDoNotDisturb)) {
             seqHelper_a("announcement", msg, "playAnnouncement", volume, restoreVolume, parallel)
             finishAnnounce(msg, null, null)
         }
@@ -1805,7 +1829,7 @@ def parallelPlayAnnouncement(String msg, String title=sNULL) {
     playAnnouncement(newMsg, null, null, true)
 }
 
-def playAnnouncement(String msg, String title, volume=null, restoreVolume=null) {
+def playAnnouncement(String msg, String title, Object volume=null, restoreVolume=null) {
     String newMsg= "${title ? "${title}::" : sBLANK}${msg}".toString()
     playAnnouncement(newMsg, volume, restoreVolume, false)
 }
@@ -1823,14 +1847,16 @@ def sendAnnouncementToDevices(String msg, String title=sNULL, List devObj, volum
             mainSeq.push([command: "announcement_devices", value: newmsg, cmdType: 'playAnnouncement', deviceData: getDeviceData()])
 
             //sendMultiSequenceCommand(mainSeq, "sendAnnouncementToDevices-VolumeSet",true)
+            updateLevel(null, volume)
             sendMultiSequenceCommand(mainSeq, "sendAnnouncementToDevices-VolumeSet")
 
             if(restoreVolume!=null) {
+                parent.queueNopCommand()
                 List amainSeq = []
                 devObj.each { dev-> amainSeq.push([command: "volume", value: restoreVolume, deviceData: getDeviceData()]) }
                 sendMultiSequenceCommand(amainSeq, "sendAnnouncementToDevices-VolumeRestore")
+                updateLevel(restoreVolume, volume)
             }
-            updateLevel(restoreVolume, volume)
             // log.debug "mainSeq: $mainSeq"
         } else { sendSequenceCommand("sendAnnouncementToDevices", "announcement_devices", newmsg) }
     }
@@ -1847,7 +1873,8 @@ def voiceCmdAsText(String cmd) {
     }
 }
 
-public playAnnouncementAll(String msg, String title=sNULL) {
+public playAnnouncementAll(String imsg, String title=sNULL) {
+    String msg=imsg
     if(isZone()) {
         parent.zoneCmdHandler([value: 'announcement', jsonData: [zones:[parent.id.toString()], cmd:'playAnnouncementAll', message: msg, title: title, changeVol:null, restoreVol:null, delay:0]], true)
     } else {
@@ -2175,7 +2202,7 @@ private createNotification(String type, Map opts) {
     def createdDate = now.getTime()
 
     def isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm")
-    isoFormat.setTimeZone(location.timeZone)
+    isoFormat.setTimeZone((TimeZone)location.timeZone)
     def alarmDate = isoFormat.parse("${(String)opts.date}T${(String)opts.time}")
     Long alarmTime = (Long)alarmDate.getTime()
     Map params = [
@@ -2689,35 +2716,53 @@ void speechTest(String ttsMsg=sNULL) {
     speak(ttsMsg)
 }
 
-void parallelSpeak(String msg) {
+// custom command
+@SuppressWarnings('unused')
+void parallelSpeakIgnoreDnd(String msg) {
+    parallelSpeak(msg, true)
+}
+
+void parallelSpeak(String msg, Boolean ignoreDoNotDisturb=false) {
     logTrace("parallelSpeak() command received...")
-    if(!msg) { logWarn("No Message sent with parallelSpeak(${fixLg(msg)}) command", true) }
-    else {
-        if(isZone()) {
-            parent.relaySpeakZone(parent.id.toString(), msg, true)
-            String lastMsg = msg ?: "Nothing to Show Here..."
-            sendEvent(name: "lastSpeakCmd", value: lastMsg, descriptionText: "Last Text Spoken", display: true, displayed: true, isStateChange:true)
-            //String t0 = getDtNow()
-            //sendEvent(name: "lastCmdSentDt", value: t0, descriptionText: "Last Command Timestamp: ${t0}", display: false, displayed: false)
-            logSpeech(msg, 200, sNULL)
+    if (isCommandTypeAllowed("TTS", false, ignoreDoNotDisturb)) {
+        if (!msg) {
+            logWarn("No Message sent with parallelSpeak(${fixLg(msg)}) command", true)
         } else {
-            speechCmd([cmdDesc: "SpeakCommand", message: msg, newVolume: null, oldVolume: null, cmdDt: now()], true)
+            if (isZone()) {
+                parent.relaySpeakZone(parent.id.toString(), msg, true, ignoreDoNotDisturb)
+                String lastMsg = msg ?: "Nothing to Show Here..."
+                sendEvent(name: "lastSpeakCmd", value: lastMsg, descriptionText: "Last Text Spoken", display: true, displayed: true, isStateChange: true)
+                //String t0 = getDtNow()
+                //sendEvent(name: "lastCmdSentDt", value: t0, descriptionText: "Last Command Timestamp: ${t0}", display: false, displayed: false)
+                logSpeech(msg, 200, sNULL)
+            } else {
+                speechCmd([cmdDesc: "SpeakCommand", message: msg, newVolume: null, oldVolume: null, cmdDt: now()], true)
+            }
         }
+    } else {
+        logWarn("Uh-Oh... The parallelSpeak($msg) Command is NOT Supported by this Device!!!")
     }
+}
+
+// custom command
+@SuppressWarnings('unused')
+void speakIgnoreDnd(String msg, volume=null, String awsPollyVoiceName = sNULL) {
+    logTrace("speakIgnoreDnd() command received...")
+    speak(msg, volume, awsPollyVoiceName, true)
 }
 
 // capability speechSynthesis
 @SuppressWarnings('unused')
-void speak(String msg, volume=null, String awsPollyVoiceName = sNULL) {
+void speak(String msg, volume=null, String awsPollyVoiceName = sNULL, Boolean ignoreDoNotDisturb=false) {
     logTrace("speak() command received...")
-    if(isCommandTypeAllowed("TTS")) {
+    if(isCommandTypeAllowed("TTS", false, ignoreDoNotDisturb)) {
         if(!msg) { logWarn("No Message sent with speak(${fixLg(msg)}) command", true) }
         else {
             Integer newvol = volume != null ? volume.toInteger() : null
             Integer restvol = state.oldVolume != null ? (Integer)state.oldVolume : null
 
             if(isZone()) {
-                parent.zoneCmdHandler([value: 'speak', jsonData: [zones:[parent.id.toString()], cmd:'speak', message: msg, changeVol: newvol, restoreVol: restvol, delay:0]], true)
+                parent.zoneCmdHandler([value: 'speak', jsonData: [zones:[parent.id.toString()], cmd:'speak', message: msg, changeVol: newvol, restoreVol: restvol, delay:0]], true, ignoreDoNotDisturb)
                 String lastMsg = msg ?: "Nothing to Show Here..."
                 sendEvent(name: "lastSpeakCmd", value: lastMsg, descriptionText: "Last Text Spoken", display: true, displayed: true, isStateChange:true)
                 //String t0 = getDtNow()
@@ -2747,12 +2792,13 @@ void updateLevel(oldvolume, newvolume) {
     }// else logWarn("Uh-Oh... UpdateLevel without any values")
 }
 
-private void speechCmd(Map cmdMap=[:], Boolean parallel=false) {
+private void speechCmd(Map icmdMap=[:], Boolean parallel=false) {
+    Map cmdMap=[:]+icmdMap
     if(!cmdMap) { logError("speechCmd | Error | cmdMap is missing"); return }
     String healthStatus = getHealthStatus()
-    if(!(healthStatus in ["ACTIVE", "ONLINE"])) { logWarn("speechCmd Ignored... Device is OFFLINE", true); return }
+    if((Boolean)settings.ignoreHealth == false && !(healthStatus in ["ACTIVE", "ONLINE"])) { logWarn("speechCmd Ignored... Device is OFFLINE", true); return }
 
-    if(settings.logTrace){
+    if((Boolean)settings.logTrace){
         String tr = "speechCmd (${cmdMap.cmdDesc}) | Msg: ${fixLg(cmdMap.message.toString())}"
         tr += cmdMap.newVolume ? " | SetVolume: (${cmdMap.newVolume})" :sBLANK
         tr += cmdMap.oldVolume ? " | Restore Volume: (${cmdMap.oldVolume})" :sBLANK
@@ -3004,14 +3050,14 @@ private String getDtNow() {
 private String formatDt(Date dt, Boolean mdy = true) {
     String formatVal = mdy ? "MMM d, yyyy - h:mm:ss a" : "E MMM dd HH:mm:ss z yyyy"
     def tf = new SimpleDateFormat(formatVal)
-    if(location?.timeZone) { tf.setTimeZone(location?.timeZone) }
+    if(location?.timeZone) { tf.setTimeZone((TimeZone)location?.timeZone) }
     return tf.format(dt)
 }
 
 private String parseFmtDt(String parseFmt, String newFmt, String dt) {
     Date newDt = Date.parse(parseFmt, dt?.toString())
     def tf = new SimpleDateFormat(newFmt)
-    if(location?.timeZone) { tf.setTimeZone(location?.timeZone) }
+    if(location?.timeZone) { tf.setTimeZone((TimeZone)location?.timeZone) }
     return tf?.format(newDt)
 }
 /*
@@ -3119,6 +3165,7 @@ static String getObjType(obj) {
     else if(obj instanceof BigDecimal) {return "BigDecimal"}
     else if(obj instanceof Float) {return "Float"}
     else if(obj instanceof Byte) {return "Byte"}
+    else if(obj instanceof com.hubitat.app.DeviceWrapper)return 'Device'
     else { return "unknown"}
 }
 

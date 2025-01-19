@@ -1,7 +1,8 @@
+/* groovylint-disable CompileStatic, MethodCount, MethodSize, UnnecessaryGetter */
 /**
  *  Echo Speaks - Zones (Hubitat)
  *
- *  Copyright 2018, 2019, 2020, 2021 Anthony Santilli
+ *  Copyright 2018, 2019, 2020, 2021, 2022, 2023, 2024 Anthony Santilli
  *  Code Contributions by @nh.schottfam
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -14,7 +15,10 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  */
-
+//file:noinspection GroovyUnusedAssignment
+//file:noinspection unused
+//file:noinspection GroovySillyAssignment
+//file:noinspection GrMethodMayBeStatic
 
 import groovy.json.JsonOutput
 import groovy.transform.Field
@@ -25,16 +29,16 @@ import java.util.concurrent.Semaphore
 //************************************************
 //*               STATIC VARIABLES               *
 //************************************************
-@Field static final String appVersionFLD  = "4.1.9.9"
-@Field static final String appModifiedFLD = "2021-09-10"
+@Field static final String appVersionFLD  = '4.2.4.0'
+@Field static final String appModifiedFLD = '2024-03-07'
 @Field static final String sNULL          = (String)null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
 @Field static final String sBULLET        = '\u2022'
-@Field static final String sBULLETINV     = '\u25E6'
-@Field static final String sSQUARE        = '\u29C8'
-@Field static final String sPLUS          = '\u002B'
-@Field static final String sRIGHTARR      = '\u02C3'
+//@Field static final String sBULLETINV     = '\u25E6'
+//@Field static final String sSQUARE        = '\u29C8'
+//@Field static final String sPLUS          = '\u002B'
+//@Field static final String sRIGHTARR      = '\u02C3'
 @Field static final String okSymFLD       = "\u2713"
 @Field static final String notOkSymFLD    = "\u2715"
 @Field static final String sPAUSESymFLD   = "\u275A\u275A"
@@ -47,21 +51,21 @@ import java.util.concurrent.Semaphore
 @Field static final String sTEXT          = 'text'
 @Field static final String sTIME          = 'time'
 @Field static final String sMODE          = 'mode'
-@Field static final String sCOMPLT        = 'complete'
+//@Field static final String sCOMPLT        = 'complete'
 @Field static final String sMEDIUM        = 'medium'
 @Field static final String sSMALL         = 'small'
 @Field static final String sCLR4D9        = '#2784D9'
 @Field static final String sCLRRED        = 'red'
 @Field static final String sCLRRED2       = '#cc2d3b'
 @Field static final String sCLRGRY        = 'gray'
-@Field static final String sCLRGRN        = 'green'
+//@Field static final String sCLRGRN        = 'green'
 @Field static final String sCLRGRN2       = '#43d843'
 @Field static final String sCLRORG        = 'orange'
 @Field static final String sTTM           = 'Tap to modify...'
 @Field static final String sTTC           = 'Tap to configure...'
-@Field static final String sTTCR          = 'Tap to configure (Required)'
-@Field static final String sTTP           = 'Tap to proceed...'
-@Field static final String sTTS           = 'Tap to select...'
+//@Field static final String sTTCR          = 'Tap to configure (Required)'
+//@Field static final String sTTP           = 'Tap to proceed...'
+//@Field static final String sTTS           = 'Tap to select...'
 @Field static final String sSETTINGS      = 'settings'
 @Field static final String sRESET         = 'reset'
 @Field static final String sEXTNRL        = 'external'
@@ -602,7 +606,7 @@ void handleZoneDevice() {
 }
 
 List getEzDevice() {
-    return getChildDevices()?.findAll { (Boolean)it?.isZone() }
+    return ((List)getChildDevices())?.findAll { (Boolean)it?.isZone() }
 }
 
 void updateChildZoneState(Boolean zoneActive, Boolean active) {
@@ -616,6 +620,7 @@ void updateChildZoneState(Boolean zoneActive, Boolean active) {
 @SuppressWarnings('unused')
 String relayDevVersion() {
     String a
+    a = sNULL
     getEzDevice().each { a = it.devVersion() }
     return a
 }
@@ -646,7 +651,7 @@ void relayDisableTraceLog() { getEzDevice().each { it.disableTraceLog() } }
 @SuppressWarnings('unused')
 void relayLogsOff() { getEzDevice().each { it.logsOff() } }
 @SuppressWarnings('unused')
-Map relayGetLogHistory() { Map a; getEzDevice().each { a = it.getLogHistory() }; return a ?: [:] }
+Map relayGetLogHistory() { Map a; a=null; getEzDevice().each { a = it.getLogHistory() }; return a ?: [:] }
 @SuppressWarnings('unused')
 void relayClearLogHistory() { getEzDevice().each { it.clearLogHistory() } }
 @SuppressWarnings('unused')
@@ -683,13 +688,13 @@ void relaySeqCommand(String type, String command, value=null,  Map deviceData=[:
 }
 
 @SuppressWarnings('unused')
-void relayAnnounceZone(String zoneId, String msg, Boolean parallel) {
-    if(zoneOnline()) parent.sendZoneAnnounce(zoneId, msg, parallel)
+void relayAnnounceZone(String zoneId, String msg, Boolean parallel, Boolean ignoreDoNotDisturb) {
+    if(zoneOnline()) parent.sendZoneAnnounce(zoneId, msg, parallel, ignoreDoNotDisturb)
 }
 
 @SuppressWarnings('unused')
-void relaySpeakZone(String zoneId, String msg, Boolean parallel) {
-    if(zoneOnline()) parent.sendZoneSpeak(zoneId, msg, parallel)
+void relaySpeakZone(String zoneId, String msg, Boolean parallel, Boolean ignoreDoNotDisturb) {
+    if(zoneOnline()) parent.sendZoneSpeak(zoneId, msg, parallel, ignoreDoNotDisturb)
 }
 
 @SuppressWarnings('unused')
@@ -703,7 +708,7 @@ private Boolean relayGetWWebSocketStatus() {
 }
 
 @SuppressWarnings('unused')
-void relayChildInitialtedRefresh() {
+void relayChildInitiatedRefresh() {
      parent.childInitiatedRefresh()
 }
 
@@ -796,6 +801,7 @@ private healthCheck() {
 
 //private condItemSet(String key) { return (settings.containsKey("cond_${key}") && settings["cond_${key}"]) }
 
+@SuppressWarnings('GroovyVariableNotAssigned')
 void scheduleCondition() {
     if(isPaused(true)) { logWarn("Zone is PAUSED... No Events will be subscribed to or scheduled....", true); return }
     Boolean tC = timeCondConfigured()
@@ -810,11 +816,11 @@ void scheduleCondition() {
                 stopTime = (String)state.stopTime ? parseDate((String)state.stopTime) : null
         }
         if(!startTime && !stopTime && dC){
-                startTime = timeToday('00:00', location.timeZone)
-                stopTime = timeTodayAfter('23:59', '00:00', location.timeZone)
+                startTime = timeToday('00:00', mTZ())
+                stopTime = timeTodayAfter('23:59', '00:00', mTZ())
         }
         if(startTime && stopTime){
-            Long t = now()
+            Long t = wnow()
             Long lstart = startTime.getTime()
             Long lstop = stopTime.getTime()
 
@@ -927,7 +933,7 @@ Boolean timeCondOk() {
 
         if(startTime && stopTime) {
             Boolean not = startTime.getTime() > stopTime.getTime()
-            Boolean isBtwn = timeOfDayIsBetween((not ? stopTime : startTime), (not ? startTime : stopTime), now, location?.timeZone)
+            Boolean isBtwn = timeOfDayIsBetween((not ? stopTime : startTime), (not ? startTime : stopTime), now, mTZ())
             isBtwn = not ? !isBtwn : isBtwn
             state.startTime =  formatDt(startTime)
             state.stopTime =  formatDt(stopTime)
@@ -941,6 +947,7 @@ Boolean timeCondOk() {
     return null
 }
 
+@SuppressWarnings('GroovyVariableNotAssigned')
 Boolean dateCondOk() {
     Boolean result = null
     Boolean dOk
@@ -955,6 +962,7 @@ Boolean dateCondOk() {
     return result
 }
 
+@SuppressWarnings('GroovyVariableNotAssigned')
 Boolean locationCondOk() {
     Boolean result = null
     Boolean mOk
@@ -1065,9 +1073,9 @@ Map conditionStatus() {
     Boolean ok = true
     if((Boolean)state.dupPendingSetup) ok = false
     if(!settings.zone_EchoDevices) ok = false
-    Integer cndSize
+    Integer cndSize=(Integer)null
     if(ok) {
-        [sTIME, "date", "location", "device"]?.each { i->
+        [sTIME, "date", "location", "device"].each { i->
             Boolean s = "${i}CondOk"()
             if(s == null) { skipped.push(i); return }
             s ? passed.push(i) : failed.push(i)
@@ -1136,18 +1144,18 @@ Boolean multipleConditions() {
 ************************************************************************************************************/
 
 def zoneEvtHandler(evt) {
-    logTrace( "${(String)evt?.name} Event | Device: ${(String)evt?.displayName} | Value: (${strCapitalize(evt?.value?.toString())}) with a delay of ${now() - ((Date)evt?.date)?.getTime()}ms")
+    logTrace( "${(String)evt?.name} Event | Device: ${(String)evt?.displayName} | Value: (${strCapitalize(evt?.value?.toString())}) with a delay of ${wnow() - ((Date)evt?.date)?.getTime()}ms")
     checkZoneStatus(evt)
     scheduleCondition()
 }
 
 void zoneTimeStartCondHandler() {
-    Map evt = [date: new Date(), name: "Time", displayName: "Condition Start Time", value: now()]
+    Map evt = [date: new Date(), name: "Time", displayName: "Condition Start Time", value: wnow()]
     zoneEvtHandler(evt)
 }
 
 void zoneTimeStopCondHandler() {
-    Map evt = [date: new Date(), name: "Time", displayName: "Condition Stop Time", value: now()]
+    Map evt = [date: new Date(), name: "Time", displayName: "Condition Stop Time", value: wnow()]
     zoneEvtHandler(evt)
 }
 
@@ -1242,10 +1250,11 @@ public getZoneHistory(Boolean asObj=false) {
     List<Map> zHist = (List)getMemStoreItem(zoneHistFLD) ?: []
     List<String> output = []
     if(zHist?.size()) {
-        zHist.each { h->
+        zHist.sort { a,b-> b.dt <=> a.dt }.each { h->
             List<Map> hList = []
             hList.push([name: "Trigger:", val: h?.evtName])
             hList.push([name: "Device:", val: h?.evtDevice])
+            // hList.push([name: "Value:", val: h?.evtValue])
             hList.push([name: "Zone Status:", val: (h?.active ? "Activate" : "Deactivate")])
             hList.push([name: "Conditions Passed:", val: h?.passed])
             hList.push([name: "Conditions Blocks:", val: h?.blocks])
@@ -1272,15 +1281,16 @@ private static String kvListToHtmlTable(List<Map> tabList, String color=sCLRGRY)
     return str
 }
 
-Map getZoneDevices(String cmd=sNULL) {
+Map getZoneDevices(String icmd=sNULL, Boolean ignoreDoNotDisturb=false) {
     // updDeviceInputs()
+    String cmd=icmd
     List devObj = []
     List devIds = []
     if(cmd==sNULL) cmd='announce'
     List devices = parent?.getDevicesFromList(settings.zone_EchoDevices)
     //devices?.each { devObj?.push([deviceTypeId: it?.getEchoDeviceType() as String, deviceSerialNumber: it?.getEchoSerial() as String]); devIds.push(it?.getId()); }
     devices?.each {
-        Map devInfo = it?.getEchoDevInfo(cmd)
+        Map devInfo = it?.getEchoDevInfo(cmd, ignoreDoNotDisturb)
         if(devInfo) {
             devObj?.push(devInfo)
             devIds.push(it?.getId())
@@ -1313,7 +1323,8 @@ public zoneRefreshHandler(evt) {
  *   or a zone device handler (calling its parent)
  */
 
-public zoneCmdHandler(evt, Boolean chldDev=false) {
+@SuppressWarnings('GroovyFallthrough')
+public zoneCmdHandler(evt, Boolean chldDev=false, Boolean ignoreDoNotDisturb=false) {
     // log.warn "zoneCmdHandler $evt"
     String cmd = evt?.value
     Map data = evt?.jsonData
@@ -1333,7 +1344,7 @@ public zoneCmdHandler(evt, Boolean chldDev=false) {
             if(fA) cmd = "announcement"
         }
 
-        Map zoneDevMap = getZoneDevices(cmd == 'speak' ? 'TTS' : 'announce')
+        Map zoneDevMap = getZoneDevices(cmd == 'speak' ? 'TTS' : 'announce', ignoreDoNotDisturb)
         List zoneDevs = (List)zoneDevMap.devices
 
         if(data.zoneVolumes && data.zoneVolumes?.size() && data.zoneVolumes[appId]) {
@@ -1355,15 +1366,20 @@ public zoneCmdHandler(evt, Boolean chldDev=false) {
         switch(cmd) {
             case "speak":
                 logDebug("Sending Speak Command: (${tmsg})${msgp1}${msgv1}${msgd1}")
-                if(data.changeVol!=null || data.restoreVol!=null) {
+                if(data.changeVol!=null) {
                     zoneDevs?.each { dev->
-                        dev?.setVolumeSpeakAndRestore(data.changeVol, tmsg, data.restoreVol)
+                        dev?.setVolumeSpeakAndRestore(data.changeVol, tmsg, null)
                     }
                     /* call zone vdevice with finishSendSpeakZ */
                     if(!chldDev) relayFinishSpeak([:], 200, [message: tmsg, oldVolume: data.restoreVol, newVolume: data.changeVol])
                 } else {
                     zoneDevs?.each { dev->
                         dev?.speak(tmsg)
+                    }
+                }
+                if(data.restoreVol!=null) {
+                    zoneDevs?.each { dev->
+                        dev?.setLevel(data.restoreVol)
                     }
                 }
                 break
@@ -1449,6 +1465,7 @@ public zoneCmdHandler(evt, Boolean chldDev=false) {
 |   Restriction validators
 *******************************************/
 
+@SuppressWarnings('GroovyFallthrough')
 static String attUnit(String attr) {
     switch(attr) {
         case "humidity":
@@ -1472,7 +1489,7 @@ Double getDevValueAvg(devs, attr) {
 } */
 
 String getCurrentMode() {
-    return location?.mode
+    return (String)location?.mode
 }
 
 List getLocationModes(Boolean sorted=false) {
@@ -1571,18 +1588,20 @@ public Map getZoneMetrics() {
 /******************************************
 |    Time and Date Conversion Functions
 *******************************************/
-String formatDt(Date dt, Boolean tzChg=true) {
+private static TimeZone mTZ(){ return TimeZone.getDefault() } // (TimeZone)location.timeZone
+
+static String formatDt(Date dt, Boolean tzChg=true) {
     return dateTimeFmt(dt, "E MMM dd HH:mm:ss z yyyy", tzChg)
 }
 
-String dateTimeFmt(Date dt, String fmt, Boolean tzChg=true) {
+static String dateTimeFmt(Date dt, String fmt, Boolean tzChg=true) {
 //    if(!(dt instanceof Date)) { try { dt = Date.parse("yyyy-MM-dd'T'HH:mm:ss.SSSZ", dt?.toString()) } catch(e) { dt = Date.parse("E MMM dd HH:mm:ss z yyyy", dt?.toString()) } }
     def tf = new SimpleDateFormat(fmt)
-    if(tzChg && location?.timeZone) { tf.setTimeZone(location?.timeZone) }
+    if(tzChg && mTZ()) { tf.setTimeZone(mTZ()) }
     return (String)tf.format(dt)
 }
 
-String convToTime(Date dt) {
+static String convToTime(Date dt) {
     String newDt = dateTimeFmt(dt, "h:mm a")
     if(newDt?.contains(":00 ")) { newDt?.toString()?.replaceAll(":00 ", sSPACE) }
     return newDt
@@ -1597,16 +1616,16 @@ static String strCapitalize(String str) { return str ? str.toString().capitalize
 
 static String pluralizeStr(List obj, Boolean para=true) { return (obj?.size() > 1) ? "${para ? "(s)": "s"}" : sBLANK }
 
-String getDtNow() {
+static String getDtNow() {
     Date now = new Date()
     return formatDt(now)
 }
 
-String epochToTime(Date dt) {
+static String epochToTime(Date dt) {
     return dateTimeFmt(dt, "h:mm a")
 }
 
-String fmtTime(t, String fmt="h:mm a", Boolean altFmt=false) {
+static String fmtTime(t, String fmt="h:mm a", Boolean altFmt=false) {
     if(!t) return sNULL
     Date dt = new Date().parse(altFmt ? "E MMM dd HH:mm:ss z yyyy" : "yyyy-MM-dd'T'HH:mm:ss.SSSZ", t.toString())
     return dateTimeFmt(dt, fmt)
@@ -1617,8 +1636,8 @@ Long GetTimeDiffSeconds(String lastDate, String sender=sNULL) {
         if(lastDate?.contains("dtNow")) { return 10000 }
         Date lastDt = parseDate(lastDate) // Date.parse("E MMM dd HH:mm:ss z yyyy", lastDate)
         Long start = lastDt.getTime()
-        Long stop = now()
-        Long diff = (stop - start) / 1000L
+        Long stop = wnow()
+        Long diff = Math.round((stop - start) / 1000L)
         return diff.abs()
     }
     catch (ex) {
@@ -1627,9 +1646,9 @@ Long GetTimeDiffSeconds(String lastDate, String sender=sNULL) {
     }
 }
 
-String getWeekDay() {
+static String getWeekDay() {
     def df = new SimpleDateFormat("EEEE")
-    df.setTimeZone(location?.timeZone)
+    df.setTimeZone(mTZ())
     return (String)df.format(new Date())
 }
 /*
@@ -1651,9 +1670,9 @@ String getYear() {
     return (String)df.format(new Date())
 }
 */
-String getMonth() {
+static String getMonth() {
     def df = new SimpleDateFormat("MMMMM")
-    df.setTimeZone(location?.timeZone)
+    df.setTimeZone(mTZ())
     return (String)df.format(new Date())
 }
 /*
@@ -1667,12 +1686,12 @@ Map getDateMap() {
     return [d: getWeekDay(), dm: getDay(), wm: getWeekMonth(), wy: getWeekYear(), m: getMonth(), y: getYear() ]
 } */
 
-Boolean isDayOfWeek(List opts) {
+static Boolean isDayOfWeek(List opts) {
     String day = getWeekDay()
     return ( opts?.contains(day) )
 }
 
-Boolean isMonthOfYear(List opts) {
+static Boolean isMonthOfYear(List opts) {
     String mon = getMonth()
     return ( opts?.contains(mon) )
 }
@@ -1681,7 +1700,7 @@ Boolean isTimeOfDay(String startTime, String stopTime) {
     if(!startTime && !stopTime) { return true }
     Date st = toDateTime(startTime)
     Date et = toDateTime(stopTime)
-    return timeOfDayIsBetween(st, et, new Date(), location.timeZone)
+    return timeOfDayIsBetween(st, et, new Date(), mTZ())
 }
 
 Boolean advLogsActive() { return ((Boolean)settings.logDebug || (Boolean)settings.logTrace) }
@@ -1747,9 +1766,9 @@ Integer getLastTsValSecs(String val, Integer nullVal=1000000) {
 }
 
 private void updAppFlag(String key, Boolean val) {
-    def data = atomicState?.appFlagsMap ?: [:]
+    Map data = atomicState?.appFlagsMap ?: [:]
     if(key) { data[key] = val }
-    atomicState?.appFlagsMap = data
+    atomicState.appFlagsMap = data
 }
 
 @SuppressWarnings('unused')
@@ -1812,12 +1831,12 @@ String getAppNotifDesc(Boolean hide=false) {
 }
 
 List getQuietDays() {
-    List allDays = weekDaysEnum()
+    List<String> allDays = weekDaysEnum()
     List curDays = (List)settings.notif_days ?: []
-    return allDays?.findAll { (!curDays?.contains(it as String)) }
+    return allDays?.findAll { (!curDays?.contains(it)) }
 }
 
-@SuppressWarnings('unused')
+@SuppressWarnings('GroovyVariableNotAssigned')
 String getNotifSchedDesc(Boolean min=false) {
     String startType = settings.notif_time_start_type
     Date startTime
@@ -1826,12 +1845,13 @@ String getNotifSchedDesc(Boolean min=false) {
     List dayInput = (List)settings.notif_days
     List modeInput = (List)settings.notif_modes
     String str = sBLANK
+
     if(startType && stopType) {
-        startTime = startType == 'time' && settings.notif_time_start ? toDateTime(settings.notif_time_start) : null
-        stopTime = stopType == 'time' && settings.notif_time_stop ? toDateTime(settings.notif_time_stop) : null
+        startTime = startType == sTIME && settings.notif_time_start ? toDateTime(settings.notif_time_start) : null
+        stopTime = stopType == sTIME && settings.notif_time_stop ? toDateTime(settings.notif_time_stop) : null
     }
     if(startType in lSUNRISESET || stopType in lSUNRISESET) {
-        def sun = getSunriseAndSunset()
+        Map sun = getSunriseAndSunset()
         Long lsunset = sun.sunset.time
         Long lsunrise = sun.sunrise.time
         Long startoffset = settings.notif_time_start_offset ? settings.notif_time_start_offset*1000L : 0L
@@ -1851,12 +1871,12 @@ String getNotifSchedDesc(Boolean min=false) {
     Boolean rest = !(daysOk && modesOk && timeOk)
     String startLbl = startTime ? epochToTime(startTime) : sBLANK
     String stopLbl = stopTime ? epochToTime(stopTime) : sBLANK
-    str += (startLbl && stopLbl) ? spanSmBr("     ${sBULLET} Restricted Times: ${startLbl} - ${stopLbl} " + getOkOrNotSymHTML(timeOk)) : sBLANK
+    str += (startLbl && stopLbl) ? spanSmBr("     ${sBULLET} Restricted Times: ${startLbl} - ${stopLbl} " + getOkOrNotSymHTML(!timeOk)) : sBLANK
     List qDays = getQuietDays()
     str += dayInput && qDays ? spanSmBr("     ${sBULLET} Restricted Day${pluralizeStr(qDays, false)}: (${qDays?.join(", ")}) " + getOkOrNotSymHTML(!daysOk)) : sBLANK
     str += modeInput ? spanSm("     ${sBULLET} Allowed Mode${pluralizeStr(modeInput, false)}: (${modeInput?.join(", ")}) " + getOkOrNotSymHTML(!modesOk)) : sBLANK
     str = str ? spanSmBr("  ${sBULLET} Restrictions Active: " + getOkOrNotSymHTML(rest)) + spanSm(str) : sBLANK
-    return (str != sBLANK) ? str : sNULL
+    return (str != sBLANK) ? divSm(str, sCLR4D9) : sNULL
 }
 
 String getOverallDesc() {
@@ -1940,6 +1960,7 @@ String getZoneDesc() {
     }
 }
 
+@SuppressWarnings('GroovyVariableNotAssigned')
 String getTimeCondDesc(Boolean addPre=true) {
     Date startTime
     Date stopTime
@@ -1990,17 +2011,17 @@ static String getInputToStringDesc(inpt, addSpace = null) {
 
 static String randomString(Integer len) {
     def pool = ["a".."z",0..9].flatten()
-    Random rand = new Random(new Date().getTime())
+    Random rand = new Random(wnow())
     def randChars = (0..len).collect { pool[rand.nextInt(pool.size())] }
     // logDebug("randomString: ${randChars?.join()}")
     return randChars.join()
 }
 
-static def getRandomItem(items) {
-    def list = new ArrayList<String>()
-    items?.each { list?.add(it) }
+/*static def getRandomItem(List items) {
+    List list = [] //new ArrayList<String>()
+    items?.each { list.add(it) }
     return list?.get(new Random().nextInt(list?.size()))
-}
+} */
 
 /***********************************************************************************************************
     HELPER FUNCTIONS
@@ -2031,16 +2052,16 @@ Integer getLastNotifMsgSec() { return !state.lastNotifMsgDt ? 100000 : GetTimeDi
 Integer getLastChildInitRefreshSec() { return !state.lastChildInitRefreshDt ? 3600 : GetTimeDiffSeconds((String)state.lastChildInitRefreshDt, "getLastChildInitRefreshSec").toInteger() }
 
 Boolean getOk2Notify() {
-    Boolean smsOk // = (settings.notif_sms_numbers?.toString()?.length()>=10)
-    Boolean pushOk // = settings.notif_send_push
-    Boolean pushOver // = (settings.notif_pushover && settings.notif_pushover_devices)
+    Boolean smsOk = false // = (settings.notif_sms_numbers?.toString()?.length()>=10)
+    Boolean pushOk = false // = settings.notif_send_push
+    Boolean pushOver = false // = (settings.notif_pushover && settings.notif_pushover_devices)
     Boolean alexaMsg = (Boolean)settings.notif_alexa_mobile
     Boolean notifDevsOk = (((List)settings.notif_devs)?.size())
     Boolean daysOk = (List)settings.notif_days ? (isDayOfWeek((List)settings.notif_days)) : true
     Boolean timeOk = notifTimeOk()
     Boolean modesOk = (List)settings.notif_modes ? (isInMode((List)settings.notif_modes)) : true
-    Boolean result = true
-    if(!(smsOk || pushOk || alexaMsg || notifDevsOk || pushOver)) { result = false }
+    Boolean result
+    result = (smsOk || pushOk || alexaMsg || notifDevsOk || pushOver)
     if(!(daysOk && modesOk && timeOk)) { result = false }
     logDebug("getOk2Notify() RESULT: $result | notifDevsOk: $notifDevsOk | smsOk: $smsOk | pushOk: $pushOk | pushOver: $pushOver | alexaMsg: $alexaMsg || daysOk: $daysOk | timeOk: $timeOk | modesOk: $modesOk")
     return result
@@ -2049,16 +2070,17 @@ Boolean getOk2Notify() {
 Boolean notifTimeOk() {
     Date startTime
     Date stopTime
+    // these are quiet time start/stop
     String startType = settings.notif_time_start_type
     String stopType = settings.notif_time_stop_type
     if(startType && stopType) {
-        startTime = startType == 'time' && settings.notif_time_start ? toDateTime(settings.notif_time_start) : null
-        stopTime = stopType == 'time' && settings.notif_time_stop ? toDateTime(settings.notif_time_stop) : null
+        startTime = startType == sTIME && settings.notif_time_start ? toDateTime(settings.notif_time_start) : null
+        stopTime = stopType == sTIME && settings.notif_time_stop ? toDateTime(settings.notif_time_stop) : null
     } else { return true }
 
     Date now = new Date()
     if(startType in lSUNRISESET || stopType in lSUNRISESET) {
-        def sun = getSunriseAndSunset()
+        Map sun = getSunriseAndSunset()
         Long lsunset = sun.sunset.time
         Long lsunrise = sun.sunrise.time
         Long startoffset = settings.notif_time_start_offset ? settings.notif_time_start_offset*1000L : 0L
@@ -2075,7 +2097,7 @@ Boolean notifTimeOk() {
 
     if(startTime && stopTime) {
         Boolean not = startTime.getTime() > stopTime.getTime()
-        Boolean isBtwn = timeOfDayIsBetween((not ? stopTime : startTime), (not ? startTime : stopTime), now, location?.timeZone) ? false : true
+        Boolean isBtwn = !timeOfDayIsBetween((not ? stopTime : startTime), (not ? startTime : stopTime), now, mTZ())
         isBtwn = not ? !isBtwn : isBtwn
         logTrace("NotifTimeOk ${isBtwn} | CurTime: (${now}) is${!isBtwn ? " NOT": sBLANK} between (${not ? stopTime:startTime} and ${not ? startTime:stopTime})")
         return isBtwn
@@ -2323,11 +2345,11 @@ public Map getSettingsAndStateMap() {
         }
         ((Map<String,String>)typeObj.caps).each { ck, cv->
             settings.findAll { it.key.endsWith(ck) }?.each { String fk, fv->
-                setObjs[fk] = [type: "capability", value: (fv instanceof List ? fv?.collect { it?.id?.toString() } : it?.id?.toString ) ] } //.toString().toList()
+                setObjs[fk] = [type: "capability", value: (fv instanceof List ? fv?.collect { it?.id?.toString() } : fv?.id?.toString ) ] } //.toString().toList()
         }
         ((Map<String, String>)typeObj.dev).each { dk, dv->
             settings.findAll { it.key.endsWith(dk) }?.each { String fk, fv->
-                setObjs[fk] = [type: "device", value: (fv instanceof List ? fv.collect { it?.id?.toString() } : it?.id?.toString() ) ] } //.toString().toList()
+                setObjs[fk] = [type: "device", value: (fv instanceof List ? fv.collect { it?.id?.toString() } : fv?.id?.toString() ) ] } //.toString().toList()
         }
     }
     Map data = [:]
@@ -2348,3 +2370,5 @@ public Map getSettingsAndStateMap() {
     data.state = state?.findAll { !((String)it?.key in stskip) }
     return data
 }
+
+private Long wnow(){ return (Long)now() }
